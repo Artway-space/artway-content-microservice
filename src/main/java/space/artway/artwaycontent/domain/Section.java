@@ -23,6 +23,6 @@ public class Section extends BaseEntity {
 //    @ManyToMany
 //    private List<Genre> genres;
 
-    @OneToOne
+    @OneToOne(mappedBy = "section")
     private ContentEntity content;
 }
