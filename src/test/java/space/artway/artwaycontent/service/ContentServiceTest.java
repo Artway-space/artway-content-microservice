@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 import space.artway.artwaycontent.domain.ContentEntity;
+import space.artway.artwaycontent.domain.LikeEntity;
 import space.artway.artwaycontent.domain.Section;
 import space.artway.artwaycontent.domain.ViewEntity;
 import space.artway.artwaycontent.repository.ContentRepository;
@@ -52,7 +53,7 @@ class ContentServiceTest {
         assertAll(
                 () -> assertNotNull(result),
                 () -> assertEquals(contentEntity.getName(), result.get(0).getName()),
-                () -> assertEquals(contentEntity.getContentType(), result.get(0).getContentType()),
+                () -> assertEquals(contentEntity.getContentType().getCode(), result.get(0).getContentType()),
                 () -> assertEquals(contentEntity.getLink(), result.get(0).getLink()),
                 () -> assertEquals(contentEntity.getCreatedAt(), result.get(0).getCreateDate()),
                 () -> assertEquals(contentEntity.getLikes().size(), result.get(0).getMetaData().getLikes()),
@@ -88,7 +89,7 @@ class ContentServiceTest {
         assertAll(
                 () -> assertNotNull(result),
                 () -> assertEquals(contentEntity.getName(), result.getName()),
-                () -> assertEquals(contentEntity.getContentType(), result.getContentType()),
+                () -> assertEquals(contentEntity.getContentType().getCode(), result.getContentType()),
                 () -> assertEquals(contentEntity.getLink(), result.getLink()),
                 () -> assertEquals(contentEntity.getCreatedAt(), result.getCreateDate()),
                 () -> assertEquals(contentEntity.getLikes().size(), result.getMetaData().getLikes()),
@@ -181,8 +182,56 @@ class ContentServiceTest {
 
     @Test
     @DisplayName("Get content liked by user")
-    void getAllLikedByUserContent() {
+    void getAllLikedByUserIdContent() {
+        var userId = 1L;
+        var content1 = new ContentEntity();
+        content1.setId(1L);
+        content1.setName("1");
+        content1.setDislikes(Collections.emptyList());
+        content1.setViews(Collections.emptyList());
+        content1.setContentType(ContentType.MP4);
+        content1.setLikes(ImmutableList.of(createLike(1L, content1, new Date(1627319488)), createLike(2L, content1, new Date())));
 
+        var content2 = new ContentEntity();
+        content2.setId(1L);
+        content2.setName("2");
+        content2.setDislikes(Collections.emptyList());
+        content2.setViews(Collections.emptyList());
+        content2.setContentType(ContentType.MP4);
+        content2.setLikes(ImmutableList.of(createLike(1L, content2, new Date(1627233088))));
+
+        var content3 = new ContentEntity();
+        content3.setId(3L);
+        content3.setName("3");
+        content3.setDislikes(Collections.emptyList());
+        content3.setViews(Collections.emptyList());
+        content3.setContentType(ContentType.MP4);
+        content3.setLikes(ImmutableList.of(createLike(1L, content3, new Date(1627405888))));
+
+        when(contentRepository.findContentEntitiesLikedByUserId(anyLong())).thenReturn(Optional.of(ImmutableList.of(content1, content2, content3)));
+
+        List<ContentDto> result = contentService.getAllLikedByUserIdContent(userId);
+
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals(content3.getName(), result.get(0).getName()),
+                () -> assertEquals(content1.getName(), result.get(1).getName()),
+                () -> assertEquals(content2.getName(), result.get(2).getName())
+        );
+    }
+
+    @Test
+    @DisplayName("Get content liked by user, but content not found ")
+    void getAllLikedByUserIdContentWhenContentNotFound(){
+        var userId = 1L;
+
+        when(contentRepository.findContentEntitiesLikedByUserId(anyLong())).thenReturn(Optional.empty());
+
+        List<ContentDto> result = contentService.getAllLikedByUserIdContent(userId);
+
+        assertAll(
+                () -> assertEquals(Collections.emptyList(), result)
+        );
     }
 
 
@@ -192,5 +241,13 @@ class ContentServiceTest {
         view.setContent(content);
         view.setCreatedAt(date);
         return view;
+    }
+
+    private LikeEntity createLike(Long userId, ContentEntity content, Date date) {
+        var like = new LikeEntity();
+        like.setUserId(userId);
+        like.setContent(content);
+        like.setCreatedAt(date);
+        return like;
     }
 }

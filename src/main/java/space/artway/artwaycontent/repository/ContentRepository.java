@@ -20,4 +20,7 @@ public interface ContentRepository extends JpaRepository<ContentEntity, Long> {
     @Query("from ContentEntity c left join c.views v where v.userId = (:userId)")
     Optional<List<ContentEntity>> findContentEntitiesWatchedByUserId(Long userId);
 
+    @Query("from ContentEntity c left join c.likes l where l.userId = (:userId)")
+    Optional<List<ContentEntity>> findContentEntitiesLikedByUserId(Long userId);
+
 }

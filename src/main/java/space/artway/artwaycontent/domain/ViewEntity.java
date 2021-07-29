@@ -1,5 +1,6 @@
 package space.artway.artwaycontent.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,6 +22,6 @@ public class ViewEntity extends BaseEntity {
     private Long userId;
 
     @ManyToOne
-    @JoinColumn
+    @JoinColumn(name = "content_id")
     private ContentEntity content;
 }

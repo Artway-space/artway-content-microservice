@@ -37,12 +37,12 @@ public class ContentEntity extends BaseEntity{
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "content")
     private List<LikeEntity> likes;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dislike_id")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "content")
+//    @JoinColumn(name = "dislike_id")
     private List<DislikeEntity> dislikes;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "view_id")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "content")
+//    @JoinColumn(name = "view_id")
     private List<ViewEntity> views;
 
     @OneToOne(fetch = FetchType.LAZY)

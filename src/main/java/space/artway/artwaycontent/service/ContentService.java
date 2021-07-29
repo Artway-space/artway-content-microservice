@@ -13,11 +13,8 @@ import space.artway.artwaycontent.repository.SectionRepository;
 import space.artway.artwaycontent.service.dto.ContentDto;
 import space.artway.artwaycontent.service.mapper.ContentMapper;
 
-import javax.swing.event.ListDataEvent;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -69,11 +66,25 @@ public class ContentService {
                 .collect(Collectors.toList());
     }
 
-    private Comparator<ContentEntity> compareContentByViews(Long userId){
-       return (content1, content2) -> compareViewDates().compare(getViewByUserId(content1.getViews(), userId),getViewByUserId( content2.getViews(), userId));
+    public List<ContentDto> getAllLikedByUserIdContent(Long userId) {
+        var content = contentRepository.findContentEntitiesLikedByUserId(userId)
+                .orElse(Collections.emptyList());
+
+        return content.stream()
+                .sorted(compareContentByLikes(userId).reversed())
+                .map(mapper::convertToDto)
+                .collect(Collectors.toList());
     }
 
-    private Comparator<ViewEntity> compareViewDates(){
+    private Comparator<ContentEntity> compareContentByViews(Long userId) {
+        return (content1, content2) -> compareDates().compare(getViewByUserId(content1.getViews(), userId), getViewByUserId(content2.getViews(), userId));
+    }
+
+    private Comparator<ContentEntity> compareContentByLikes(Long userId) {
+        return (content1, content2) -> compareDates().compare(getLikeByUserId(content1.getLikes(), userId), getLikeByUserId(content2.getLikes(), userId));
+    }
+
+    private Comparator<BaseEntity> compareDates() {
         return Comparator.comparing(BaseEntity::getCreatedAt);
     }
 
@@ -88,6 +99,19 @@ public class ContentService {
                 .findFirst()
                 .get();
     }
+
+    private LikeEntity getLikeByUserId(List<LikeEntity> likes, Long userId) {
+        long count = likes.stream()
+                .filter(like -> userId.equals(like.getUserId()))
+                .count();
+
+        return likes.stream()
+                .filter(like -> userId.equals(like.getUserId()))
+                .skip(count - 1)
+                .findFirst()
+                .get();
+    }
+
 
     private List<Genre> getGenresFromDto(Set<String> genresDto) {
         return genresDto.stream()
