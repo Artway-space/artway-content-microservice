@@ -1,5 +1,6 @@
 package space.artway.artwaycontent.service;
 
+import com.google.common.collect.ImmutableList;
 import javassist.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,8 @@ public class ViewsService {
     }
 
     public List<ViewDto> getAllViewsByAuthorId(long authorId) throws NotFoundException {
-        var content = contentRepository.findContentByAuthorId(authorId)
+        var statuses = ImmutableList.of(ContentStatus.DELETED, ContentStatus.INACTIVE, ContentStatus.IN_TRASH_BIN);
+        var content = contentRepository.findContentByAuthorIdAndStatusNotIn(authorId, statuses)
                 .orElseThrow(() -> new NotFoundException(ExceptionsMessages.CONTENT_NOT_FOUND_TEXT));
 
         return content.stream()

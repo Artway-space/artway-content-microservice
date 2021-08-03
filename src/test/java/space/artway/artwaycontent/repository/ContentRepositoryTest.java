@@ -1,5 +1,6 @@
 package space.artway.artwaycontent.repository;
 
+import com.google.common.collect.ImmutableList;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.jeasy.random.FieldPredicates;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import space.artway.artwaycontent.domain.ContentEntity;
 import space.artway.artwaycontent.domain.LikeEntity;
 import space.artway.artwaycontent.domain.ViewEntity;
+import space.artway.artwaycontent.service.ContentStatus;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +49,20 @@ class ContentRepositoryTest {
         createView(5L, content3);
         createLike(5L, content3);
 
+        var content4 = createContent(10L);
+        content4.setStatus(ContentStatus.INACTIVE);
+        contentRepository.save(content4);
+        createView(7L, content4);
+        createView(8L, content4);
+        createLike(8L, content4);
+
+
+        var content5 = createContent(10L);
+        content5.setStatus(ContentStatus.ACTIVE);
+        contentRepository.save(content5);
+        createView(7L, content5);
+        createView(8L, content5);
+        createLike(8L, content5);
     }
 
     @Test
@@ -77,6 +93,17 @@ class ContentRepositoryTest {
         );
     }
 
+    @Test
+    public void testFindContentByAuthorIdAndStatusNotIn(){
+        Optional<List<ContentEntity>> contentByAuthorIdAndStatusNotIn = contentRepository.findContentByAuthorIdAndStatusNotIn(10L, ImmutableList.of(ContentStatus.INACTIVE));
+        List<ContentEntity> content = contentByAuthorIdAndStatusNotIn.get();
+
+        assertAll(
+                () -> assertNotNull(content),
+                () -> assertEquals(5L, (long) content.get(0).getId())
+        );
+    }
+
 
     private void createView(Long userId, ContentEntity content) {
         var view = new ViewEntity();
@@ -92,9 +119,9 @@ class ContentRepositoryTest {
         likeRepository.save(like);
     }
 
-    private ContentEntity createContent(Long id) {
+    private ContentEntity createContent(Long authorId) {
         var content = new EasyRandom(new EasyRandomParameters()
-                .randomize(FieldPredicates.named("id"), () -> id)
+                .randomize(FieldPredicates.named("authorId"), () -> authorId)
                 .randomize(FieldPredicates.named("likes"), Collections::emptyList)
                 .randomize(FieldPredicates.named("dislikes"), Collections::emptyList)
                 .randomize(FieldPredicates.named("views"), Collections::emptyList)

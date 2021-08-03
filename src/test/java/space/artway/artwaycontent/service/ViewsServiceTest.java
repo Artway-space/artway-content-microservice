@@ -99,7 +99,7 @@ public class ViewsServiceTest {
         content3.setViews(Collections.emptyList());
         List<ContentEntity> content = ImmutableList.of(content1, content2, content3);
 
-        when(contentRepository.findContentByAuthorId(anyLong())).thenReturn(Optional.of(content));
+        when(contentRepository.findContentByAuthorIdAndStatusNotIn(anyLong(), anyCollection())).thenReturn(Optional.of(content));
 
         List<ViewDto> result = viewsService.getAllViewsByAuthorId(authorId);
 
@@ -111,7 +111,7 @@ public class ViewsServiceTest {
     @Test
     @DisplayName("Get all views by author's content, but content not found")
     void getAllViewsByAuthorIdWhenContentNotFound() throws NotFoundException {
-        when(contentRepository.findContentByAuthorId(anyLong())).thenReturn(Optional.empty());
+        when(contentRepository.findContentByAuthorIdAndStatusNotIn(anyLong(), anyCollection())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> viewsService.getAllViewsByAuthorId(12L));
     }

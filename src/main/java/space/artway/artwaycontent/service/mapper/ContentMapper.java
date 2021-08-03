@@ -16,6 +16,7 @@ public class ContentMapper extends AbstractMapper<ContentEntity, ContentDto>{
         contentDto.setName(entity.getName());
         contentDto.setLink(entity.getLink());
         contentDto.setSize(entity.getSize());
+        contentDto.setStatus(entity.getStatus());
         contentDto.setCreateDate(entity.getCreatedAt());
         contentDto.setMetaData(getMetaData(entity));
         contentDto.setContentType(entity.getContentType().getCode());

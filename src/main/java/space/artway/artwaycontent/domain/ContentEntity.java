@@ -1,9 +1,12 @@
 package space.artway.artwaycontent.domain;
 
 import lombok.*;
+import space.artway.artwaycontent.service.ContentStatus;
 import space.artway.artwaycontent.service.ContentType;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -33,6 +36,14 @@ public class ContentEntity extends BaseEntity{
 
     @Column(name = "author_id")
     private Long authorId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ContentStatus status;
+
+    @Size(max = 256)
+    @Column(name = "check_sum")
+    private String checkSum;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "content")
     private List<LikeEntity> likes;

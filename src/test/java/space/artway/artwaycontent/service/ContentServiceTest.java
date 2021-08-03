@@ -4,9 +4,11 @@ import com.google.common.collect.ImmutableList;
 import javassist.NotFoundException;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
+import org.jeasy.random.FieldPredicates;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
@@ -27,8 +29,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ContentServiceTest {
@@ -46,7 +48,7 @@ class ContentServiceTest {
                 .collectionSizeRange(1, 3)
         ).nextObject(ContentEntity.class);
 
-        when(contentRepository.findContentByAuthorId(1L)).thenReturn(Optional.of(ImmutableList.of(contentEntity)));
+        when(contentRepository.findContentByAuthorIdAndStatusNotIn(eq(1L), anyCollection())).thenReturn(Optional.of(ImmutableList.of(contentEntity)));
 
         List<ContentDto> result = contentService.getAllAuthorContent(1L);
 
@@ -65,7 +67,7 @@ class ContentServiceTest {
     @Test
     @DisplayName("Author has not cotent")
     void findContentByAuthorId_contentNotFound() {
-        when(contentRepository.findContentByAuthorId(anyLong())).thenReturn(Optional.empty());
+        when(contentRepository.findContentByAuthorIdAndStatusNotIn(anyLong(), anyCollection())).thenReturn(Optional.empty());
 
         List<ContentDto> result = contentService.getAllAuthorContent(1L);
 
@@ -171,6 +173,7 @@ class ContentServiceTest {
     @DisplayName("Get content viewed by user when no content history")
     void getAllViewedByUserIdContentWhenContentNotFound() {
         var userId = 1L;
+
         when(contentRepository.findContentEntitiesWatchedByUserId(anyLong())).thenReturn(Optional.empty());
 
         List<ContentDto> result = contentService.getAllViewedByUserIdContent(userId);
@@ -221,8 +224,8 @@ class ContentServiceTest {
     }
 
     @Test
-    @DisplayName("Get content liked by user, but content not found ")
-    void getAllLikedByUserIdContentWhenContentNotFound(){
+    @DisplayName("Get content liked by user, but content not found")
+    void getAllLikedByUserIdContentWhenContentNotFound() {
         var userId = 1L;
 
         when(contentRepository.findContentEntitiesLikedByUserId(anyLong())).thenReturn(Optional.empty());
@@ -234,6 +237,62 @@ class ContentServiceTest {
         );
     }
 
+    @Test
+    @DisplayName("Delete content")
+    void putContentInTrashBin() throws NotFoundException {
+        var contentId = 1L;
+        var content = new EasyRandom(new EasyRandomParameters()
+                .randomize(FieldPredicates.named("status"), () -> ContentStatus.ACTIVE)
+                .randomize(FieldPredicates.named("views"), Collections::emptyList)
+                .randomize(FieldPredicates.named("likes"), Collections::emptyList)
+                .randomize(FieldPredicates.named("dislikes"), Collections::emptyList)
+        ).nextObject(ContentEntity.class);
+
+        ArgumentCaptor<ContentEntity> contentCaptor = ArgumentCaptor.forClass(ContentEntity.class);
+        when(contentRepository.findContentEntityById(anyLong())).thenReturn(Optional.of(content));
+        when(contentRepository.save(any(ContentEntity.class))).thenReturn(content);
+
+        contentService.putContentInTrashBin(contentId);
+
+        verify(contentRepository).save(contentCaptor.capture());
+        assertAll(
+                () -> assertEquals(ContentStatus.IN_TRASH_BIN, contentCaptor.getValue().getStatus())
+        );
+
+    }
+
+    @Test
+    @DisplayName("Delete content but content not found")
+    void putContentInTrashBinWhenContentNotFound() {
+        var contentId = 1L;
+
+        when(contentRepository.findContentEntityById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> contentService.getContentByNameAndAuthorId("Don't stop me now", 1L));
+    }
+
+    @Test
+    @DisplayName("Delete content permanently")
+    void deleteContent() {
+        var content = new EasyRandom(new EasyRandomParameters()
+                .randomize(FieldPredicates.named("staus"), () -> ContentStatus.IN_TRASH_BIN)
+        ).nextObject(ContentEntity.class);
+
+        when(contentRepository.findContentEntitiesByStatus(eq(ContentStatus.IN_TRASH_BIN))).thenReturn(Optional.of(Collections.singletonList(content)));
+
+        ArgumentCaptor<ContentEntity> contentCaptor = ArgumentCaptor.forClass(ContentEntity.class);
+
+        contentService.deleteContent();
+
+        verify(contentRepository).save(contentCaptor.capture());
+
+        ContentEntity value = contentCaptor.getValue();
+
+        assertAll(
+                () -> assertEquals(ContentStatus.DELETED, value.getStatus())
+        );
+
+    }
 
     private ViewEntity createView(Long userId, ContentEntity content, Date date) {
         var view = new ViewEntity();
