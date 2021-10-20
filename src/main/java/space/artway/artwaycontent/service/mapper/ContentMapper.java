@@ -32,12 +32,6 @@ public interface ContentMapper {
             @Mapping(target = "contentType", expression = "java(ContentType.findValueByCode(multipartFile.getContentType()))")
     })
     ContentEntity convertToEntity(ContentDto dto, MultipartFile multipartFile);
- /*   {
-        ContentEntity contentEntity = new ContentEntity();
-        contentEntity.setContentType(ContentType.findValueByCode(multipartFile.getContentType()));
-        contentEntity.setSize(multipartFile.getSize());
-        return contentEntity;
-    }*/
 
 
    default ContentEntity convertToEntity(ContentDto dto) {
@@ -57,11 +51,4 @@ public interface ContentMapper {
        return genre.getName();
    }
 
-//    private MetaData getMetaData(ContentEntity entity) {
-//        MetaData metaData = new MetaData();
-//        metaData.setLikes((long) entity.getLikes().size());
-//        metaData.setDislikes((long) entity.getDislikes().size());
-//        metaData.setViews((long) entity.getViews().size());
-//        return metaData;
-//    }
 }

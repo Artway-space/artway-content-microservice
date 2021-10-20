@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,7 +67,6 @@ public class ContentService {
 
         uploadContent(multipartFile, contentEntity);
 
-        //contentEntity.setLink(null);
         return mapper.convertToDto(contentRepository.save(contentEntity));
     }
 
