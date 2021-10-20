@@ -13,6 +13,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+import space.artway.artwaycontent.client.StorageMsClient;
 import space.artway.artwaycontent.domain.ContentEntity;
 import space.artway.artwaycontent.domain.LikeEntity;
 import space.artway.artwaycontent.domain.Section;
@@ -23,12 +24,13 @@ import space.artway.artwaycontent.repository.SectionRepository;
 import space.artway.artwaycontent.service.dto.ContentDto;
 import space.artway.artwaycontent.service.mapper.ContentMapper;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mapstruct.factory.Mappers.getMapper;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,8 +40,9 @@ class ContentServiceTest {
     private final ContentRepository contentRepository = Mockito.mock(ContentRepository.class);
     private final SectionRepository sectionRepository = Mockito.mock(SectionRepository.class);
     private final GenreRepository genreRepository = Mockito.mock(GenreRepository.class);
-    private final ContentMapper contentMapper = new ContentMapper();
-    private final ContentService contentService = new ContentService(contentRepository, sectionRepository, genreRepository, contentMapper);
+    private final StorageMsClient storageMsClient = Mockito.mock(StorageMsClient.class);
+    private final ContentMapper contentMapper = getMapper(ContentMapper.class);
+    private final ContentService contentService = new ContentService(contentRepository, sectionRepository, genreRepository, contentMapper, storageMsClient);
 
     @Test
     @DisplayName("Find Content By Author ID")
@@ -140,21 +143,21 @@ class ContentServiceTest {
         content1.setDislikes(Collections.emptyList());
         content1.setLikes(Collections.emptyList());
         content1.setContentType(ContentType.MP4);
-        content1.setViews(ImmutableList.of(createView(1L, content1, new Date(1627319488)), createView(2L, content1, new Date(1627319588))));
+        content1.setViews(ImmutableList.of(createView(1L, content1, LocalDateTime.of(2021, 7, 26, 17, 11, 28)), createView(2L, content1, LocalDateTime.of(2021, 7, 26, 20, 13, 8))));
         var content2 = new ContentEntity();
         content2.setId(2L);
         content2.setName("2");
         content2.setDislikes(Collections.emptyList());
         content2.setLikes(Collections.emptyList());
         content2.setContentType(ContentType.MP4);
-        content2.setViews(ImmutableList.of(createView(1L, content2, new Date(1627233088))));
+        content2.setViews(ImmutableList.of(createView(1L, content2,  LocalDateTime.of(2021, 7,25,20,11,28))));
         var content3 = new ContentEntity();
         content3.setId(3L);
         content3.setName("3");
         content3.setDislikes(Collections.emptyList());
         content3.setLikes(Collections.emptyList());
         content3.setContentType(ContentType.MP4);
-        content3.setViews(ImmutableList.of(createView(1L, content3, new Date(1627405888))));
+        content3.setViews(ImmutableList.of(createView(1L, content3,  LocalDateTime.of(2021, 7,27,17,11,28))));
 
         when(contentRepository.findContentEntitiesWatchedByUserId(anyLong())).thenReturn(Optional.of(ImmutableList.of(content1, content2, content3)));
 
@@ -193,7 +196,7 @@ class ContentServiceTest {
         content1.setDislikes(Collections.emptyList());
         content1.setViews(Collections.emptyList());
         content1.setContentType(ContentType.MP4);
-        content1.setLikes(ImmutableList.of(createLike(1L, content1, new Date(1627319488)), createLike(2L, content1, new Date())));
+        content1.setLikes(ImmutableList.of(createLike(1L, content1, LocalDateTime.of(2021, 7, 26, 20, 11, 28)), createLike(2L, content1, LocalDateTime.now())));
 
         var content2 = new ContentEntity();
         content2.setId(1L);
@@ -201,7 +204,7 @@ class ContentServiceTest {
         content2.setDislikes(Collections.emptyList());
         content2.setViews(Collections.emptyList());
         content2.setContentType(ContentType.MP4);
-        content2.setLikes(ImmutableList.of(createLike(1L, content2, new Date(1627233088))));
+        content2.setLikes(ImmutableList.of(createLike(1L, content2, LocalDateTime.of(2021, 7, 25, 17, 11, 28))));
 
         var content3 = new ContentEntity();
         content3.setId(3L);
@@ -209,7 +212,7 @@ class ContentServiceTest {
         content3.setDislikes(Collections.emptyList());
         content3.setViews(Collections.emptyList());
         content3.setContentType(ContentType.MP4);
-        content3.setLikes(ImmutableList.of(createLike(1L, content3, new Date(1627405888))));
+        content3.setLikes(ImmutableList.of(createLike(1L, content3, LocalDateTime.of(2021, 7, 27, 17, 12, 28))));
 
         when(contentRepository.findContentEntitiesLikedByUserId(anyLong())).thenReturn(Optional.of(ImmutableList.of(content1, content2, content3)));
 
@@ -294,7 +297,7 @@ class ContentServiceTest {
 
     }
 
-    private ViewEntity createView(Long userId, ContentEntity content, Date date) {
+    private ViewEntity createView(Long userId, ContentEntity content, LocalDateTime date) {
         var view = new ViewEntity();
         view.setUserId(userId);
         view.setContent(content);
@@ -302,7 +305,7 @@ class ContentServiceTest {
         return view;
     }
 
-    private LikeEntity createLike(Long userId, ContentEntity content, Date date) {
+    private LikeEntity createLike(Long userId, ContentEntity content, LocalDateTime date) {
         var like = new LikeEntity();
         like.setUserId(userId);
         like.setContent(content);

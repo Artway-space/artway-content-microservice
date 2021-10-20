@@ -5,23 +5,26 @@ import com.google.common.collect.ImmutableList;
 import javassist.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import space.artway.artwaycontent.client.StorageMsClient;
 import space.artway.artwaycontent.domain.*;
 import space.artway.artwaycontent.exception.ExceptionsMessages;
 import space.artway.artwaycontent.repository.ContentRepository;
 import space.artway.artwaycontent.repository.GenreRepository;
 import space.artway.artwaycontent.repository.SectionRepository;
 import space.artway.artwaycontent.service.dto.ContentDto;
+import space.artway.artwaycontent.service.dto.FileDto;
+import space.artway.artwaycontent.service.dto.ShortContentDto;
 import space.artway.artwaycontent.service.mapper.ContentMapper;
 
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class ContentService {
     private final SectionRepository sectionRepository;
     private final GenreRepository genreRepository;
     private final ContentMapper mapper;
+    private final StorageMsClient client;
 
     public List<ContentDto> getAllAuthorContent(long authorId) {
         var statuses = ImmutableList.of(ContentStatus.DELETED, ContentStatus.INACTIVE, ContentStatus.IN_TRASH_BIN);
@@ -63,7 +67,6 @@ public class ContentService {
 
         uploadContent(multipartFile, contentEntity);
 
-        contentEntity.setLink(null);
         return mapper.convertToDto(contentRepository.save(contentEntity));
     }
 
@@ -87,12 +90,12 @@ public class ContentService {
                 .collect(Collectors.toList());
     }
 
-    public ContentDto putContentInTrashBin(Long contentId) throws NotFoundException {
+    public ShortContentDto putContentInTrashBin(Long contentId) throws NotFoundException {
         var content = contentRepository.findContentEntityById(contentId)
                 .orElseThrow(() -> new NotFoundException(ExceptionsMessages.CONTENT_NOT_FOUND_TEXT));
         content.setStatus(ContentStatus.IN_TRASH_BIN);
         ContentEntity deletedContent = contentRepository.save(content);
-        return mapper.convertToDto(deletedContent);
+        return mapper.convertToShortedDto(deletedContent);
     }
 
     @Scheduled(cron = "0 0 0 * * *")
@@ -101,7 +104,7 @@ public class ContentService {
                 .orElse(Collections.emptyList());
 
         content.stream()
-                .filter(c -> TimeUnit.DAYS.convert(Math.abs(new Date().getTime() - c.getLastModified().getTime()), TimeUnit.MILLISECONDS) > DAYS_TO_DELETE)
+                .filter(c -> LocalDateTime.now().minusDays(DAYS_TO_DELETE).isBefore(c.getLastModified()))
                 .forEach(this::deleteContent);
     }
 
@@ -174,13 +177,15 @@ public class ContentService {
         return stringBuilder.toString();
     }
 
+    @SneakyThrows
     private String uploadContent(MultipartFile file, ContentEntity contentEntity) {
-
-        String link = "";
-        return link;
+        final ResponseEntity<FileDto> response = client.uploadFile(file);
+        String fileId = response.getBody().getId();
+        return fileId;
     }
 
     private ContentEntity deleteContent(ContentEntity content) {
+        client.deleteFile(content.getFileId());
         //todo send to drives delete command
         content.setStatus(ContentStatus.DELETED);
         contentRepository.save(content);

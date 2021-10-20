@@ -11,7 +11,8 @@ import java.util.Arrays;
 @AllArgsConstructor
 public enum ContentType {
     MP3("audio/mpeg"),
-    MP4("video/mp4");
+    MP4("video/mp4"),
+    PNG("image/png");
 
     private String code;
 
