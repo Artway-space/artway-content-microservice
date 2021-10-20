@@ -45,6 +45,9 @@ public class ContentEntity extends BaseEntity{
     @Column(name = "check_sum")
     private String checkSum;
 
+    @Column(name = "file_id")
+    private String fileId;
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "content")
     private List<LikeEntity> likes;
 

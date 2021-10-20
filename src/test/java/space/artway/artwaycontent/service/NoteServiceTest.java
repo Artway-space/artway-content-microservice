@@ -13,6 +13,7 @@ import space.artway.artwaycontent.repository.ContentRepository;
 import space.artway.artwaycontent.repository.DislikeRepository;
 import space.artway.artwaycontent.repository.LikeRepository;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 
@@ -33,8 +34,8 @@ class NoteServiceTest {
     @BeforeEach
     void init() {
         content = new ContentEntity();
-        content.setCreatedAt(new Date());
-        content.setLastModified(new Date());
+        content.setCreatedAt(LocalDateTime.now());
+        content.setLastModified(LocalDateTime.now());
         like = new LikeEntity();
         like.setContent(content);
         like.setId(1L);
