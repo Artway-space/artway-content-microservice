@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import javassist.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.cglib.core.CollectionUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,8 @@ public class ContentService {
         contentEntity.setStatus(ContentStatus.ACTIVE);
         contentEntity.setCheckSum(getFileCheckSum(multipartFile));
 
-        uploadContent(multipartFile, contentEntity);
+        final String fileId = uploadContent(multipartFile, contentEntity);
+        contentEntity.setFileId(fileId);
 
         return mapper.convertToDto(contentRepository.save(contentEntity));
     }
@@ -146,6 +148,8 @@ public class ContentService {
 
 
     private List<Genre> getGenresFromDto(Set<String> genresDto) {
+        if (genresDto == null)
+            return Collections.emptyList();
         return genresDto.stream()
                 .filter(Objects::nonNull)
                 .map(genreRepository::getByName)
@@ -186,7 +190,6 @@ public class ContentService {
 
     private ContentEntity deleteContent(ContentEntity content) {
         client.deleteFile(content.getFileId());
-        //todo send to drives delete command
         content.setStatus(ContentStatus.DELETED);
         contentRepository.save(content);
         return content;
